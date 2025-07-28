@@ -198,9 +198,7 @@ def create_lip_sync_ui(client: ViduClient):
                 gr.Textbox(interactive=False),
                 gr.Slider(interactive=False),
                 gr.Dropdown(interactive=False),
-                gr.Slider(interactive=False),
-                gr.Group(interactive=False),
-                gr.Group(interactive=False)
+                gr.Slider(interactive=False)
             )
         
         def lip_complete(result):
@@ -214,9 +212,7 @@ def create_lip_sync_ui(client: ViduClient):
                 gr.Textbox(interactive=True),
                 gr.Slider(interactive=True),
                 gr.Dropdown(interactive=True),
-                gr.Slider(interactive=True),
-                gr.Group(interactive=True),
-                gr.Group(interactive=True)
+                gr.Slider(interactive=True)
             )
         
         def on_drive_mode_change(drive_mode):
@@ -242,7 +238,7 @@ def create_lip_sync_ui(client: ViduClient):
         lip_btn.click(
             fn=lip_task,
             inputs=[lip_video_file, lip_drive_mode, lip_audio_file, lip_text, lip_speed, lip_character_id, lip_volume],
-            outputs=[lip_status, lip_output, lip_btn, lip_video_file, lip_drive_mode, lip_audio_file, lip_text, lip_speed, lip_character_id, lip_volume, audio_drive_group, text_drive_group],
+            outputs=[lip_status, lip_output, lip_btn, lip_video_file, lip_drive_mode, lip_audio_file, lip_text, lip_speed, lip_character_id, lip_volume],
             queue=False
         ).then(
             fn=lambda *args: create_lip_sync_task(client, *args),
@@ -251,7 +247,7 @@ def create_lip_sync_ui(client: ViduClient):
         ).then(
             fn=lip_complete,
             inputs=[lip_output],
-            outputs=[lip_status, lip_output, lip_btn, lip_video_file, lip_drive_mode, lip_audio_file, lip_text, lip_speed, lip_character_id, lip_volume, audio_drive_group, text_drive_group]
+            outputs=[lip_status, lip_output, lip_btn, lip_video_file, lip_drive_mode, lip_audio_file, lip_text, lip_speed, lip_character_id, lip_volume]
         )
         
         return {

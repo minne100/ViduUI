@@ -40,17 +40,18 @@ def get_default_resolution(model: str, duration: str) -> str:
     return default_map.get(model, {}).get(duration, "360p")
 
 
-def create_image_to_video_task(client: ViduClient, model: str, image_files: List[str], prompt: str, 
+def create_image_to_video_task(client: ViduClient, model: str, image_files, prompt: str, 
                               duration: str, seed: int, resolution: str, 
                               movement_amplitude: str, bgm: str) -> str:
     """创建图生视频任务并轮询结果"""
     try:
         # 处理图片文件
         images = []
-        for img_file in image_files:
-            if img_file:
+        if image_files:
+            # 当file_count="single"时，Gradio返回的是单个文件对象
+            if hasattr(image_files, 'name') and image_files.name:
                 # 将Gradio文件转换为Base64
-                base64_img = ViduClient.encode_image_to_base64(img_file.name, "image/jpeg")
+                base64_img = ViduClient.encode_image_to_base64(image_files.name, "image/jpeg")
                 images.append(base64_img)
         
         if not images:

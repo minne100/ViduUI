@@ -362,7 +362,6 @@ class ViduClient:
         if callback_url is not None:
             request_data["callback_url"] = callback_url
         
-        print("image_to_video请求参数:", request_data)
         return self._make_request('POST', '/ent/v2/img2video', request_data)
     
     def reference_to_video(

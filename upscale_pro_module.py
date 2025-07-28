@@ -11,16 +11,30 @@ from vidu_client import ViduClient, ViduTaskStatus
 from utils import get_error_message
 
 
-def create_upscale_pro_task(client: ViduClient, video_url: str, video_creation_id: str, upscale_resolution: str) -> str:
+def create_upscale_pro_task(client: ViduClient, video_file: gr.File, video_creation_id: str, upscale_resolution: str) -> str:
     """创建智能超清任务并轮询结果"""
+    uploaded_files = []  # 记录上传的文件路径，用于后续清理
+    
     try:
         # 参数验证
-        if not video_url.strip() and not video_creation_id.strip():
-            return "❌ 请输入视频URL或视频创建ID"
+        if not video_file or not video_file.name:
+            if not video_creation_id.strip():
+                return "❌ 请上传视频文件或输入视频创建ID"
+        
+        # 上传视频文件（如果提供了文件）
+        video_url = None
+        if video_file and video_file.name:
+            from file_upload_utils import save_uploaded_file, cleanup_files
+            
+            video_result = save_uploaded_file(video_file, "video")
+            if not video_result:
+                return "❌ 视频文件上传失败"
+            video_path, video_url = video_result
+            uploaded_files.append(video_path)
         
         # 创建任务
         response = client.upscale_pro(
-            video_url=video_url.strip() if video_url.strip() else None,
+            video_url=video_url,
             video_creation_id=video_creation_id.strip() if video_creation_id.strip() else None,
             upscale_resolution=upscale_resolution
         )
@@ -77,24 +91,32 @@ def create_upscale_pro_task(client: ViduClient, video_url: str, video_creation_i
         return result
         
     except Exception as e:
+        # 清理已上传的文件
+        if uploaded_files:
+            from file_upload_utils import cleanup_files
+            cleanup_files(uploaded_files)
         return f"❌ 创建任务失败: {str(e)}"
+    finally:
+        # 任务完成后清理文件
+        if uploaded_files:
+            from file_upload_utils import cleanup_files
+            cleanup_files(uploaded_files)
 
 
 def create_upscale_pro_ui(client: ViduClient):
     """创建智能超清UI界面"""
     with gr.Tab("🔍 智能超清"):
-        with gr.Row():
-            upscale_video_url = gr.Textbox(
-                label="视频URL（可选）",
-                placeholder="请输入要超清的视频URL",
-                lines=2,
-                info="支持的格式：MP4、FLV、HLS、MXF、MOV、TS、WEBM、MKV，时长不超过300秒，帧率低于60FPS"
-            )
-            upscale_video_creation_id = gr.Textbox(
-                label="视频创建ID（可选）",
-                placeholder="请输入Vidu视频生成任务的唯一ID",
-                info="优先使用此参数，若同时填写则忽略视频URL"
-            )
+        upscale_video_file = gr.File(
+            label="上传视频文件（可选）",
+            file_types=["video"]
+        )
+        gr.Markdown("💡 支持格式：MP4、FLV、HLS、MXF、MOV、TS、WEBM、MKV，时长不超过300秒，帧率低于60FPS")
+        
+        upscale_video_creation_id = gr.Textbox(
+            label="视频创建ID（可选）",
+            placeholder="请输入Vidu视频生成任务的唯一ID",
+            info="优先使用此参数，若同时上传视频文件则忽略视频文件"
+        )
         
         upscale_resolution = gr.Dropdown(
             choices=["1080p", "2K", "4K", "8K"],
@@ -107,12 +129,12 @@ def create_upscale_pro_ui(client: ViduClient):
         upscale_status = gr.HTML(label="状态", visible=False)
         upscale_output = gr.HTML(label="任务结果")
         
-        def upscale_task(video_url, video_creation_id, upscale_resolution):
+        def upscale_task(video_file, video_creation_id, upscale_resolution):
             return (
                 gr.HTML(value="<div style='color: #007bff; font-weight: bold;'>⏳ 生成中，请耐心等待...</div>", visible=True),
                 gr.HTML(value=""),
                 gr.Button(interactive=False),
-                gr.Textbox(interactive=False),
+                gr.File(interactive=False),
                 gr.Textbox(interactive=False),
                 gr.Dropdown(interactive=False)
             )
@@ -122,28 +144,28 @@ def create_upscale_pro_ui(client: ViduClient):
                 gr.HTML(visible=False),
                 gr.HTML(value=result),
                 gr.Button(interactive=True),
-                gr.Textbox(interactive=True),
+                gr.File(interactive=True),
                 gr.Textbox(interactive=True),
                 gr.Dropdown(interactive=True)
             )
         
         upscale_btn.click(
             fn=upscale_task,
-            inputs=[upscale_video_url, upscale_video_creation_id, upscale_resolution],
-            outputs=[upscale_status, upscale_output, upscale_btn, upscale_video_url, upscale_video_creation_id, upscale_resolution],
+            inputs=[upscale_video_file, upscale_video_creation_id, upscale_resolution],
+            outputs=[upscale_status, upscale_output, upscale_btn, upscale_video_file, upscale_video_creation_id, upscale_resolution],
             queue=False
         ).then(
             fn=lambda *args: create_upscale_pro_task(client, *args),
-            inputs=[upscale_video_url, upscale_video_creation_id, upscale_resolution],
+            inputs=[upscale_video_file, upscale_video_creation_id, upscale_resolution],
             outputs=[upscale_output]
         ).then(
             fn=upscale_complete,
             inputs=[upscale_output],
-            outputs=[upscale_status, upscale_output, upscale_btn, upscale_video_url, upscale_video_creation_id, upscale_resolution]
+            outputs=[upscale_status, upscale_output, upscale_btn, upscale_video_file, upscale_video_creation_id, upscale_resolution]
         )
         
         return {
-            'video_url': upscale_video_url,
+            'video_file': upscale_video_file,
             'video_creation_id': upscale_video_creation_id,
             'upscale_resolution': upscale_resolution,
             'btn': upscale_btn,

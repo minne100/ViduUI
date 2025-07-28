@@ -45,20 +45,26 @@ def get_start_end_default_resolution(model: str, duration: str) -> str:
     return default_map.get(model, {}).get(duration, "360p")
 
 
-def create_start_end_to_video_task(client: ViduClient, model: str, image_files: List[str], 
+def create_start_end_to_video_task(client: ViduClient, model: str, start_image, end_image, 
                                   prompt: str, duration: str, seed: int, resolution: str,
                                   movement_amplitude: str, bgm: str) -> str:
     """创建首尾帧生视频任务并轮询结果"""
     try:
         # 处理图片文件
         images = []
-        for img_file in image_files:
-            if img_file:
-                base64_img = ViduClient.encode_image_to_base64(img_file.name, "image/jpeg")
-                images.append(base64_img)
+        
+        # 处理首帧图片
+        if start_image and hasattr(start_image, 'name') and start_image.name:
+            base64_img = ViduClient.encode_image_to_base64(start_image.name, "image/jpeg")
+            images.append(base64_img)
+        
+        # 处理尾帧图片
+        if end_image and hasattr(end_image, 'name') and end_image.name:
+            base64_img = ViduClient.encode_image_to_base64(end_image.name, "image/jpeg")
+            images.append(base64_img)
         
         if len(images) != 2:
-            return "❌ 请上传2张图片（首帧和尾帧）"
+            return "❌ 请上传首帧和尾帧图片"
         
         if not prompt.strip():
             return "❌ 请输入文本提示词"
@@ -142,11 +148,17 @@ def create_start_end_to_video_ui(client: ViduClient):
                 label="模型"
             )
         
-        start2end_images = gr.File(
-            file_count="multiple",
-            label="上传图片（必须2张：首帧和尾帧）",
-            file_types=["image"]
-        )
+        with gr.Row():
+            start2end_start_image = gr.File(
+                file_count="single",
+                label="上传首帧图片",
+                file_types=["image"]
+            )
+            start2end_end_image = gr.File(
+                file_count="single",
+                label="上传尾帧图片",
+                file_types=["image"]
+            )
         
         start2end_prompt = gr.Textbox(
             label="文本提示词（必填）",
@@ -185,12 +197,13 @@ def create_start_end_to_video_ui(client: ViduClient):
         start2end_status = gr.HTML(label="状态", visible=False)
         start2end_output = gr.HTML(label="任务结果")
         
-        def start2end_task(model, images, prompt, duration, seed, resolution, movement, bgm):
+        def start2end_task(model, start_image, end_image, prompt, duration, seed, resolution, movement, bgm):
             return (
                 gr.HTML(value="<div style='color: #007bff; font-weight: bold;'>⏳ 生成中，请耐心等待...</div>", visible=True),
                 gr.HTML(value=""),
                 gr.Button(interactive=False),
                 gr.Dropdown(interactive=False),
+                gr.File(interactive=False),
                 gr.File(interactive=False),
                 gr.Textbox(interactive=False),
                 gr.Dropdown(interactive=False),
@@ -207,6 +220,7 @@ def create_start_end_to_video_ui(client: ViduClient):
                 gr.Button(interactive=True),
                 gr.Dropdown(interactive=True),
                 gr.File(interactive=True),
+                gr.File(interactive=True),
                 gr.Textbox(interactive=True),
                 gr.Dropdown(interactive=True),
                 gr.Number(interactive=True),
@@ -217,16 +231,16 @@ def create_start_end_to_video_ui(client: ViduClient):
         
         start2end_btn.click(
             fn=start2end_task,
-            inputs=[start2end_model, start2end_images, start2end_prompt, 
+            inputs=[start2end_model, start2end_start_image, start2end_end_image, start2end_prompt, 
                    start2end_duration, start2end_seed, start2end_resolution, 
                    start2end_movement, start2end_bgm],
             outputs=[start2end_status, start2end_output, start2end_btn, start2end_model, 
-                   start2end_images, start2end_prompt, start2end_duration, 
+                   start2end_start_image, start2end_end_image, start2end_prompt, start2end_duration, 
                    start2end_seed, start2end_resolution, start2end_movement, start2end_bgm],
             queue=False
         ).then(
             fn=lambda *args: create_start_end_to_video_task(client, *args),
-            inputs=[start2end_model, start2end_images, start2end_prompt, 
+            inputs=[start2end_model, start2end_start_image, start2end_end_image, start2end_prompt, 
                    start2end_duration, start2end_seed, start2end_resolution, 
                    start2end_movement, start2end_bgm],
             outputs=[start2end_output]
@@ -234,7 +248,7 @@ def create_start_end_to_video_ui(client: ViduClient):
             fn=start2end_complete,
             inputs=[start2end_output],
             outputs=[start2end_status, start2end_output, start2end_btn, start2end_model, 
-                   start2end_images, start2end_prompt, start2end_duration, 
+                   start2end_start_image, start2end_end_image, start2end_prompt, start2end_duration, 
                    start2end_seed, start2end_resolution, start2end_movement, start2end_bgm]
         )
         
@@ -265,7 +279,8 @@ def create_start_end_to_video_ui(client: ViduClient):
         
         return {
             'model': start2end_model,
-            'images': start2end_images,
+            'start_image': start2end_start_image,
+            'end_image': start2end_end_image,
             'prompt': start2end_prompt,
             'duration': start2end_duration,
             'seed': start2end_seed,
