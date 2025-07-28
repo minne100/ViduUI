@@ -12,7 +12,6 @@
 - ✅ 支持本地文件处理（Base64编码）
 - ✅ 完整的类型提示和文档
 - ✅ **新增：基于Gradio的Web UI界面**
-- ✅ **新增：自动任务完成和下载**
 - ✅ **新增：.env文件配置支持**
 
 ## 安装
@@ -46,11 +45,9 @@ export VIDU_API_KEY="your_api_key_here"
 #### 2. 启动UI
 
 ```bash
-# 方法1: 使用启动脚本
+# 使用启动脚本
 python start_ui.py
 
-# 方法2: 直接运行UI文件
-python vidu_ui.py
 ```
 
 #### 3. 访问界面
@@ -221,10 +218,6 @@ if task.is_success:
 ]
 ```
 
-### 📖 帮助标签页
-
-包含详细的使用说明和注意事项。
-
 ## 下载功能详解
 
 ### 1. 下载所有生成物
@@ -306,84 +299,6 @@ if task.is_success:
     }
   ]
 }
-```
-
-## 支持的功能
-
-### 视频生成
-- **图生视频** (`image_to_video`)
-- **参考生视频** (`reference_to_video`)
-- **首尾帧生视频** (`start_end_to_video`)
-- **文生视频** (`text_to_video`)
-
-### 视频处理
-- **智能超清** (`upscale_pro`)
-- **对口型** (`lip_sync`)
-
-### 音频生成
-- **文生音频** (`text_to_audio`)
-- **可控文生音效** (`timing_to_audio`)
-
-### 任务管理
-- **查询任务状态** (`query_task`)
-- **取消任务** (`cancel_task`)
-- **等待任务完成** (`wait_for_completion`)
-
-### 下载功能
-- **下载所有生成物** (`download_creation`)
-- **下载视频文件** (`download_video`)
-- **下载音频文件** (`download_audio`)
-- **下载封面文件** (`download_cover`)
-
-## 模型支持
-
-| 模型 | 支持时长 | 支持功能 |
-|------|----------|----------|
-| viduq1 | 5秒 | 图生视频、参考生视频、首尾帧生视频、文生视频 |
-| viduq1-classic | 5秒 | 首尾帧生视频 |
-| vidu2.0 | 4秒 | 图生视频、参考生视频、首尾帧生视频、文生视频 |
-| vidu1.5 | 4秒、8秒 | 图生视频、参考生视频、首尾帧生视频、文生视频 |
-
-## 配置选项
-
-### 环境变量
-
-可以通过环境变量配置UI行为：
-
-```bash
-# 设置服务器端口
-export VIDU_SERVER_PORT=8080
-
-# 启用公网分享
-export VIDU_SHARE_PUBLIC=true
-
-# 设置默认超时时间
-export VIDU_DEFAULT_TIMEOUT=600
-```
-
-### 配置文件
-
-编辑 `config.py` 文件可以修改更多配置：
-
-- 服务器配置
-- UI主题
-- 文件上传限制
-- 下载目录
-- 超时时间
-
-## 文件结构
-
-```
-ViduUI/
-├── vidu_ui.py          # 主UI文件
-├── start_ui.py         # 启动脚本
-├── config.py           # 配置文件
-├── vidu_client.py      # Vidu API客户端
-├── requirements.txt    # 依赖包列表
-├── env_example.txt     # 环境变量示例文件
-├── downloads/          # 下载文件目录
-├── temp/              # 临时文件目录
-└── README.md          # 本使用指南
 ```
 
 ## 错误处理

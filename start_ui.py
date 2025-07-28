@@ -16,25 +16,35 @@ try:
     from vidu_ui import create_ui
     import gradio as gr
     
-    print("🎬 启动 Vidu API 客户端 UI...")
-    print("📁 当前目录:", current_dir)
-    print("🔧 Gradio 版本:", gr.__version__)
+    # 导入配置（配置已在模块导入时自动初始化）
+    from config import SERVER_HOST, SERVER_PORT, SHARE_PUBLIC
     
     # 创建UI
     demo = create_ui()
     
     # 启动服务
     print("🚀 启动Web服务...")
-    print("📱 本地访问地址: http://localhost:7860")
+    print(f"📱 本地访问地址: http://localhost:{SERVER_PORT}")
     print("🌐 公网访问地址: 启动后显示")
     print("⏹️  按 Ctrl+C 停止服务")
     
+    # 配置静态文件服务
+    from pathlib import Path
+    uploads_dir = Path(__file__).parent / "uploads"
+    uploads_dir.mkdir(exist_ok=True)
+    
     demo.launch(
-        server_name="0.0.0.0",
-        server_port=7860,
-        share=False,  # 设置为True可以生成公网链接
+        server_name=SERVER_HOST,
+        server_port=SERVER_PORT,
+        share=SHARE_PUBLIC,  # 使用配置文件中的设置
         show_error=True,
-        quiet=False
+        quiet=False,
+        # 配置静态文件服务
+        app_kwargs={
+            "static_dirs": {
+                "/uploads": str(uploads_dir)
+            }
+        }
     )
     
 except ImportError as e:

@@ -3,8 +3,5 @@
 
 # Vidu API密钥 (必填)
 VIDU_API_KEY=your_api_key_here
-
-# 服务器配置 (可选)
-VIDU_SERVER_PORT=7860
-VIDU_SHARE_PUBLIC=false
-VIDU_DEFAULT_TIMEOUT=300 
+# 服务器域名 (必填)
+DOMAIN=you_domain
